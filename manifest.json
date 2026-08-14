@@ -3,14 +3,14 @@
     "manifestVersion": 2,
     "deprecated": false,
     "name": "OpenSubtitles PT-BR",
-    "description": "Busca legendas de anime em português do Brasil no OpenSubtitles.",
+    "description": "Busca legendas PT-BR de animes no OpenSubtitles.",
     "id": "opensubtitles-ptbr",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "subtitle",
     "accuracy": "medium",
     "icon": "https://www.opensubtitles.com/favicon.ico",
     "media": "sub",
-    "url": "https://api.opensubtitles.com",
+    "url": "aHR0cHM6Ly9hcGkub3BlbnN1YnRpdGxlcy5jb20=",
     "languages": ["BR"],
     "update": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/manifest.json",
     "code": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/extension.js",
@@ -18,7 +18,17 @@
     "options": {
       "apiKey": {
         "type": "string",
-        "description": "API Key do OpenSubtitles",
+        "description": "API Key criada no OpenSubtitles",
+        "default": ""
+      },
+      "username": {
+        "type": "string",
+        "description": "Usuário do OpenSubtitles",
+        "default": ""
+      },
+      "password": {
+        "type": "string",
+        "description": "Senha do OpenSubtitles",
         "default": ""
       }
     }
