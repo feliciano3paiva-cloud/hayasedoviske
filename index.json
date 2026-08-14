@@ -2,12 +2,12 @@
   {
     "name": "Teste OpenSubtitles",
     "id": "feliciano.test.opensubtitles",
-    "version": "9.0.0",
-    "type": "subtitle",
+    "version": "10.0.0",
+    "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
     "media": "sub",
-    "languages": ["BR"],
+    "languages": ["US"],
     "icon": "https://www.opensubtitles.com/favicon.ico",
     "update": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/index.json",
     "code": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/extension.js"
