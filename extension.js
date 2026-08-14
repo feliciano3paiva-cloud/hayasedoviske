@@ -1,12 +1,15 @@
 const API = "https://api.opensubtitles.com/api/v1";
-const USER_AGENT = "HayasePTBR/1.0";
+const USER_AGENT = "HayasePTBR v1.1";
 
 let session = null;
-let lastLogin = 0;
+let sessionTime = 0;
 
-async function login(fetchFn, apiKey) {
-  // Evita fazer login repetidamente.
-  if (session && Date.now() - lastLogin < 10 * 60 * 1000) {
+async function getSession(fetchFn, apiKey, username, password) {
+  // Reutiliza a sessão por 10 minutos para evitar logins repetidos.
+  if (
+    session &&
+    Date.now() - sessionTime < 10 * 60 * 1000
+  ) {
     return session;
   }
 
@@ -18,29 +21,98 @@ async function login(fetchFn, apiKey) {
       "Accept": "application/json",
       "User-Agent": USER_AGENT
     },
-    body: JSON.stringify({})
+    body: JSON.stringify({
+      username,
+      password
+    })
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(
+        "OpenSubtitles recusou o login. Confira usuário e senha."
+      );
+    }
+
     throw new Error(
-      `Falha ao autenticar no OpenSubtitles (HTTP ${response.status}).`
+      `Erro ao fazer login no OpenSubtitles: HTTP ${response.status}`
     );
   }
 
   const data = await response.json();
 
-  if (!data.token) {
-    throw new Error("OpenSubtitles não retornou um token.");
+  if (!data.token || !data.base_url) {
+    throw new Error(
+      "OpenSubtitles não retornou uma sessão válida."
+    );
   }
 
   session = {
     token: data.token,
-    baseUrl: data.base_url || "api.opensubtitles.com"
+    baseUrl: data.base_url
   };
 
-  lastLogin = Date.now();
+  sessionTime = Date.now();
 
   return session;
+}
+
+function normalizeTitle(title) {
+  return String(title || "")
+    .toLowerCase()
+    .replace(/[._:-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function scoreResult(result, titles, episode) {
+  const attributes = result?.attributes || {};
+  const feature = attributes.feature_details || {};
+
+  const resultTitle = normalizeTitle(
+    feature.title || ""
+  );
+
+  const normalizedTitles = titles.map(normalizeTitle);
+
+  let score = 0;
+
+  for (const title of normalizedTitles) {
+    if (!title) continue;
+
+    if (resultTitle === title) {
+      score += 100;
+    } else if (
+      resultTitle.includes(title) ||
+      title.includes(resultTitle)
+    ) {
+      score += 50;
+    }
+  }
+
+  if (attributes.language === "pt-br") {
+    score += 100;
+  }
+
+  if (
+    feature.episode_number != null &&
+    Number(feature.episode_number) === Number(episode)
+  ) {
+    score += 50;
+  }
+
+  if (attributes.download_count) {
+    score += Math.min(
+      20,
+      Math.log10(attributes.download_count + 1) * 5
+    );
+  }
+
+  if (attributes.hearing_impaired === false) {
+    score += 5;
+  }
+
+  return score;
 }
 
 export default new class extends SubtitleSource {
@@ -51,127 +123,206 @@ export default new class extends SubtitleSource {
 
   async single(query, options) {
 
-    const apiKey = String(options?.apiKey || "").trim();
+    const apiKey = String(
+      options?.apiKey || ""
+    ).trim();
+
+    const username = String(
+      options?.username || ""
+    ).trim();
+
+    const password = String(
+      options?.password || ""
+    ).trim();
 
     if (!apiKey) {
       throw new Error(
-        "Configure sua API Key do OpenSubtitles nas configurações da extensão."
+        "Configure a API Key do OpenSubtitles nas configurações da extensão."
       );
     }
 
-    const title = query.titles?.[0];
+    if (!username || !password) {
+      throw new Error(
+        "Configure usuário e senha do OpenSubtitles nas configurações da extensão."
+      );
+    }
+
+    const titles = Array.isArray(query.titles)
+      ? query.titles.filter(Boolean)
+      : [];
+
     const episode = query.episode;
 
-    if (!title || !episode) {
+    if (!titles.length || !episode) {
       return [];
     }
 
-    const auth = await login(query.fetch, apiKey);
+    const auth = await getSession(
+      query.fetch,
+      apiKey,
+      username,
+      password
+    );
 
-    const params = new URLSearchParams({
-      query: title,
-      languages: "pt-br",
-      type: "episode",
-      episode_number: String(episode),
-      order_by: "download_count",
-      order_direction: "desc",
-      page: "1"
-    });
-
-    const searchUrl =
-      `https://${auth.baseUrl}/api/v1/subtitles?${params.toString()}`;
-
-    const searchResponse = await query.fetch(searchUrl, {
-      headers: {
-        "Api-Key": apiKey,
-        "Authorization": `Bearer ${auth.token}`,
-        "Accept": "application/json",
-        "User-Agent": USER_AGENT
-      }
-    });
-
-    if (!searchResponse.ok) {
-      throw new Error(
-        `Busca no OpenSubtitles falhou (HTTP ${searchResponse.status}).`
-      );
-    }
-
-    const data = await searchResponse.json();
-
-    if (!Array.isArray(data.data)) {
-      return [];
-    }
+    const baseUrl = String(auth.baseUrl)
+      .replace(/^https?:\/\//, "")
+      .replace(/\/+$/, "");
 
     const results = [];
 
-    for (const subtitle of data.data) {
+    // Tentamos os títulos alternativos até encontrar resultados.
+    for (const title of titles.slice(0, 5)) {
 
-      const attributes = subtitle?.attributes;
+      const params = new URLSearchParams({
+        query: title,
+        languages: "pt-br",
+        type: "episode",
+        episode_number: String(episode),
+        order_by: "download_count",
+        order_direction: "desc",
+        page: "1"
+      });
 
-      if (!attributes) continue;
+      const searchUrl =
+        `https://${baseUrl}/api/v1/subtitles?${params}`;
 
-      // Garantir que seja realmente PT-BR.
-      if (attributes.language !== "pt-br") continue;
-
-      const files = Array.isArray(attributes.files)
-        ? attributes.files
-        : [];
-
-      for (const file of files) {
-
-        if (!file?.file_id) continue;
-
-        try {
-
-          const downloadUrl =
-            `https://${auth.baseUrl}/api/v1/download`;
-
-          const downloadResponse = await query.fetch(downloadUrl, {
-            method: "POST",
-
-            headers: {
-              "Api-Key": apiKey,
-              "Authorization": `Bearer ${auth.token}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-              "User-Agent": USER_AGENT
-            },
-
-            body: JSON.stringify({
-              file_id: Number(file.file_id)
-            })
-          });
-
-          if (!downloadResponse.ok) {
-            continue;
+      const response = await query.fetch(
+        searchUrl,
+        {
+          headers: {
+            "Api-Key": apiKey,
+            "Authorization": `Bearer ${auth.token}`,
+            "Accept": "application/json",
+            "User-Agent": USER_AGENT
           }
-
-          const downloadData = await downloadResponse.json();
-
-          if (!downloadData.link) {
-            continue;
-          }
-
-          results.push({
-            url: downloadData.link,
-            language: "BR"
-          });
-
-        } catch (_) {
-          // Tenta a próxima legenda.
         }
+      );
 
-        // Não sobrecarregar a API.
-        if (results.length >= 5) {
-          break;
-        }
+      if (!response.ok) {
+        continue;
       }
 
-      if (results.length >= 5) {
+      const data = await response.json();
+
+      if (!Array.isArray(data.data)) {
+        continue;
+      }
+
+      for (const item of data.data) {
+
+        if (
+          item?.attributes?.language !== "pt-br"
+        ) {
+          continue;
+        }
+
+        results.push(item);
+      }
+
+      if (results.length >= 10) {
         break;
       }
     }
 
-    return results;
+    // Remove duplicados.
+    const unique = [];
+
+    const seen = new Set();
+
+    for (const item of results) {
+
+      const id =
+        item?.id ||
+        item?.attributes?.files?.[0]?.file_id;
+
+      if (!id || seen.has(String(id))) {
+        continue;
+      }
+
+      seen.add(String(id));
+      unique.push(item);
+    }
+
+    // Ordena pelas correspondências mais prováveis.
+    unique.sort(
+      (a, b) =>
+        scoreResult(b, titles, episode) -
+        scoreResult(a, titles, episode)
+    );
+
+    const output = [];
+
+    // No máximo 5 downloads de legenda por pesquisa.
+    for (const item of unique.slice(0, 5)) {
+
+      const files =
+        Array.isArray(item?.attributes?.files)
+          ? item.attributes.files
+          : [];
+
+      const file = files.find(
+        f => f?.file_id
+      );
+
+      if (!file) {
+        continue;
+      }
+
+      const downloadUrl =
+        `https://${baseUrl}/api/v1/download`;
+
+      try {
+
+        const downloadResponse =
+          await query.fetch(
+            downloadUrl,
+            {
+              method: "POST",
+
+              headers: {
+                "Api-Key": apiKey,
+                "Authorization":
+                  `Bearer ${auth.token}`,
+                "Content-Type":
+                  "application/json",
+                "Accept":
+                  "application/json",
+                "User-Agent":
+                  USER_AGENT
+              },
+
+              body: JSON.stringify({
+                file_id:
+                  Number(file.file_id)
+              })
+            }
+          );
+
+        if (!downloadResponse.ok) {
+          continue;
+        }
+
+        const downloadData =
+          await downloadResponse.json();
+
+        if (!downloadData.link) {
+          continue;
+        }
+
+        output.push({
+          url: downloadData.link,
+          language: "BR"
+        });
+
+      } catch (_) {
+        // Tenta a próxima legenda.
+      }
+
+      if (output.length >= 3) {
+        break;
+      }
+    }
+
+    return output;
   }
 };
