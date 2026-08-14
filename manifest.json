@@ -3,22 +3,20 @@
     "manifestVersion": 2,
     "deprecated": false,
     "name": "OpenSubtitles PT-BR",
-    "description": "Busca legendas PT-BR de animes no OpenSubtitles.",
-    "id": "opensubtitles-ptbr",
-    "version": "1.1.0",
+    "description": "Busca legendas em português brasileiro no OpenSubtitles.",
+    "id": "feliciano-opensubtitles-ptbr",
+    "version": "2.0.0",
     "type": "subtitle",
-    "accuracy": "medium",
+    "accuracy": "high",
     "icon": "https://www.opensubtitles.com/favicon.ico",
     "media": "sub",
     "url": "aHR0cHM6Ly9hcGkub3BlbnN1YnRpdGxlcy5jb20=",
     "languages": ["BR"],
-    "update": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/manifest.json",
     "code": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/extension.js",
-    "rateLimit": 1,
     "options": {
       "apiKey": {
         "type": "string",
-        "description": "API Key criada no OpenSubtitles",
+        "description": "OpenSubtitles API Key",
         "default": ""
       },
       "username": {
