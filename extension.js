@@ -3,7 +3,7 @@ export default new class TesteLegendas {
     return true
   }
 
-  async single({ episode, titles }) {
+  async single(query) {
     return [
       {
         url: "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/test.srt",
