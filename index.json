@@ -1,14 +1,14 @@
 [
   {
-    "name": "OpenSubtitles PT-BR",
-    "id": "feliciano.extension.opensubtitles.ptbr",
+    "name": "Teste",
+    "id": "feliciano.test",
     "version": "1.0.0",
     "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
     "media": "sub",
     "languages": [
-      "BR"
+      "US"
     ],
     "icon": "https://www.opensubtitles.com/favicon.ico",
     "update": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/index.json",
