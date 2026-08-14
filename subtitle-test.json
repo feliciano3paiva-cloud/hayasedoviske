@@ -1,0 +1,16 @@
+[
+  {
+    "manifestVersion": 2,
+    "deprecated": false,
+    "name": "Subtitle Test",
+    "description": "Teste de suporte a extensões de legenda.",
+    "id": "feliciano.subtitle.test",
+    "version": "1.0.0",
+    "type": "subtitle",
+    "accuracy": "high",
+    "icon": "https://www.opensubtitles.com/favicon.ico",
+    "media": "sub",
+    "languages": ["BR"],
+    "code": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/subtitle-test.js"
+  }
+]
