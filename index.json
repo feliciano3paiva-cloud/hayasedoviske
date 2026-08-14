@@ -1,19 +1,15 @@
 [
   {
-    "manifestVersion": 2,
-    "deprecated": false,
-    "name": "OpenSubtitles PT-BR",
-    "description": "Busca legendas em português brasileiro no OpenSubtitles.",
-    "id": "feliciano.extension.opensubtitles.ptbr",
-    "version": "1.0.0",
-    "type": "subtitle",
+    "name": "Teste OpenSubtitles",
+    "id": "feliciano.test.opensubtitles",
+    "version": "9.0.0",
+    "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
-    "icon": "https://www.opensubtitles.com/favicon.ico",
     "media": "sub",
-    "languages": [
-      "BR"
-    ],
+    "languages": ["US"],
+    "icon": "https://www.opensubtitles.com/favicon.ico",
+    "update": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/index.json",
     "code": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/extension.js"
   }
 ]
