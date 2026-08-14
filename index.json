@@ -3,7 +3,7 @@
     "name": "OpenSubtitles PT-BR",
     "id": "feliciano.extension.opensubtitles.ptbr",
     "version": "1.0.0",
-    "type": "subtitle",
+    "type": "torrent",
     "accuracy": "high",
     "ratio": 0,
     "media": "sub",
