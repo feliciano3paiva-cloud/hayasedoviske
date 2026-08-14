@@ -8,7 +8,7 @@
     "version": "1.0.0",
     "type": "subtitle",
     "accuracy": "medium",
-    "icon": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/test-icon.png",
+    "icon": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/icon.png",
     "media": "sub",
     "languages": ["BR"],
     "code": "https://raw.githubusercontent.com/feliciano3paiva-cloud/hayasedoviske/main/test.js"
